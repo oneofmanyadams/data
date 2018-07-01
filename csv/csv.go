@@ -1,4 +1,10 @@
 // Package csv provides a standardized way of working with CSV data.
+// Quick Example:
+//  d := csv.Open("./data.csv")
+//  for d.HasMoreRecords() {
+// 	 fmt.Println(d.NextRecord())
+//  }
+//  d.Close()
 package csv
 
 import (
