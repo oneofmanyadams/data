@@ -41,7 +41,7 @@ func NewCsv() (new_file Csv) {
 }
 
 // Open is a more direct way of creating a new Csv instance.
-// Not only calls NewCsv(), but also automatically opens the file  with OpenFile().
+// Calls NewCsv() and also automatically opens the file  with OpenFile().
 func Open(file_location string) (new_csv Csv) {
 	new_csv = NewCsv()
 	new_csv.OpenFile("./data.csv")
@@ -54,6 +54,7 @@ func Open(file_location string) (new_csv Csv) {
 
 // OpenFile attempts to open a csv file at the location provided.
 // Will save a pointer to the file at .file and a pointer to the csv.Reader at .Data.
+// Returns true if the file was loaded and false if it was not loaded.
 func (c *Csv) OpenFile(file_location string) (load_success bool) {
 	file, file_error := os.Open(file_location)
 	if file_error != nil {
@@ -71,9 +72,10 @@ func (c *Csv) OpenFile(file_location string) (load_success bool) {
 	return
 }
 
+// Close closes the file connection that was opened during the OpenFile() method call.
 func (c *Csv) Close() {
-	// be smart about where you use this.
-	// Because the read is buffered (through bufio) prematurely closing the file
+	// Be smart about where you use this.
+	// Because the read is buffered, (through bufio) prematurely closing the file
 	// will still allow some data (10-20 lines) to be read.
 	c.file.Close()
 }
@@ -82,6 +84,10 @@ func (c *Csv) Close() {
 // Read Methods
 //////////////////////////////////////////////////////////////////
 
+// NextRecord returns the next un-read line from the csv file.
+// If it encounters an io.EOF as a read error it will set
+// .AllDataRead to true.
+// Increments .LinesRead by 1.
 func (c *Csv) NextRecord() (line []string) {
 	read_line, line_error := c.Data.Read()
 
@@ -101,6 +107,8 @@ func (c *Csv) NextRecord() (line []string) {
 	return
 }
 
+// HasMoreRecords returns false if there is either a fatal blunder or if an
+// EOF was encountered during a NextRecord() call.
 func (c *Csv) HasMoreRecords() bool {
 	if c.AllDataRead {
 		return false
