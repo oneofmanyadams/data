@@ -14,7 +14,7 @@ import (
 // be called directly.
 //  - Location is the path to the file that is to be read.
 //  - LinesRead is a count of the lines read from the file using the NextRecord() method.
-//  - AllDataRead is used to determine if EOF has been reached or if a fatal blunder has been recorded.
+//  - AllDataRead is used to determine if EOF has been reached while using the NextRecord() method.
 //  - Data is a pointer to a encoding/csv instance of NewReader()
 //  - Blunders is the implementation of a custom package that expands error recording and handling.
 type Csv struct {

@@ -1,4 +1,4 @@
-// Package data provides a comman interface for loading data from different formats.
+// Package data provides a common interface for loading data from different formats.
 package data
 
 
