@@ -1,3 +1,4 @@
+// Package csv provides a standardized way of working with CSV data.
 package csv
 
 import (
@@ -8,16 +9,30 @@ import (
 	"blunders"
 )
 
+// Csv is the main type for the Csv package.
+// Can be initialized with either the NewCsv() or Open() function, but should not
+// be called directly.
+//  - Location is the path to the file that is to be read.
+//  - LinesRead is a count of the lines read from the file using the NextRecord() method.
+//  - AllDataRead is used to determine if EOF has been reached or if a fatal blunder has been recorded.
+//  - Data is a pointer to a encoding/csv instance of NewReader()
+//  - Blunders is the implementation of a custom package that expands error recording and handling.
 type Csv struct {
-	Blunders blunders.Blunders
 	Location string
 	LinesRead int
-	LineRecords int
 	AllDataRead bool
 	Data *csv.Reader
 	file *os.File
+	Blunders blunders.Blunders
 }
 
+//////////////////////////////////////////////////////////////////
+// Init Functions
+//////////////////////////////////////////////////////////////////
+
+// NewCsv is the most basic way to initialize a Csv instance.
+// Initializes the Blunders instance.
+// This is where all Blunder Codes are defined.
 func NewCsv() (new_file Csv) {
 	new_file.Blunders = blunders.NewBlunders("CSV")
 	new_file.Blunders.AddCode(1, "DataLocation")
@@ -25,7 +40,21 @@ func NewCsv() (new_file Csv) {
 	return
 }
 
-func (c *Csv) Open(file_location string) (load_success bool) {
+// Open is a more direct way of creating a new Csv instance.
+// Not only calls NewCsv(), but also automatically opens the file  with OpenFile().
+func Open(file_location string) (new_csv Csv) {
+	new_csv = NewCsv()
+	new_csv.OpenFile("./data.csv")
+	return
+}
+
+//////////////////////////////////////////////////////////////////
+// Open / Close Methods
+//////////////////////////////////////////////////////////////////
+
+// OpenFile attempts to open a csv file at the location provided.
+// Will save a pointer to the file at .file and a pointer to the csv.Reader at .Data.
+func (c *Csv) OpenFile(file_location string) (load_success bool) {
 	file, file_error := os.Open(file_location)
 	if file_error != nil {
 		c.Blunders.NewFatal(1, file_error.Error())
@@ -42,28 +71,18 @@ func (c *Csv) Open(file_location string) (load_success bool) {
 	return
 }
 
-func OpenNew(file_location string) (new_csv Csv) {
-	new_csv = NewCsv()
-	new_csv.Open("./data.csv")
-	return
-}
-
 func (c *Csv) Close() {
-	//this is closing the file too early!
-	//defer c.file.Close()
+	// be smart about where you use this.
+	// Because the read is buffered (through bufio) prematurely closing the file
+	// will still allow some data (10-20 lines) to be read.
+	c.file.Close()
 }
 
-func (c *Csv) AllDone() bool {
-	if c.AllDataRead {
-		return true
-	}
-	if c.Blunders.HasFatal() {
-		return true
-	}
-	return false
-}
+//////////////////////////////////////////////////////////////////
+// Read Methods
+//////////////////////////////////////////////////////////////////
 
-func (c *Csv) NextLine() (line []string) {
+func (c *Csv) NextRecord() (line []string) {
 	read_line, line_error := c.Data.Read()
 
 	if line_error != nil {
@@ -76,9 +95,18 @@ func (c *Csv) NextLine() (line []string) {
 	}
 
 	c.LinesRead = c.LinesRead + 1
-	c.LineRecords = len(read_line)
 
 	line = read_line
 
 	return
+}
+
+func (c *Csv) HasMoreRecords() bool {
+	if c.AllDataRead {
+		return false
+	}
+	if c.Blunders.HasFatal() {
+		return false
+	}
+	return true
 }
