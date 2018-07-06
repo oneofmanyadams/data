@@ -67,6 +67,15 @@ func NewMeta(meta_location string) (meta Meta) {
 	return
 }
 
+func GenerateMeta() {
+
+}
+
+func MetaHasDataPoints(required_points []string) bool {
+	
+	return true
+}
+
 func (meta Meta) DisplayMeta() {
 	fmt.Println("Location:", meta.DataLocation)
 	fmt.Println("IsFolder:", meta.LocationIsFolder)
