@@ -15,6 +15,7 @@ type Meta struct {
 	DataLocation string
 	LocationIsFolder bool
 	DataType string
+	HasTitleRow bool
 	DataAge time.Time
 	DataPoints []DataPoint `xml:"DataPoint"`
 	PointPositions map[string]int
@@ -70,6 +71,7 @@ func (meta Meta) DisplayMeta() {
 	fmt.Println("Location:", meta.DataLocation)
 	fmt.Println("IsFolder:", meta.LocationIsFolder)
 	fmt.Println("MimeType:", meta.DataType)
+	fmt.Println("HasTitleRow:", meta.HasTitleRow)
 	fmt.Println("DataAge:", meta.DataAge)
 
 	for _, dp := range meta.DataPoints {
