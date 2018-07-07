@@ -8,7 +8,6 @@ import (
 	"encoding/xml"
 	"path/filepath"
 	"blunders"
-	"fmt"
 )
 
 type Meta struct {
@@ -37,21 +36,25 @@ func NewMeta(meta_location string) (meta Meta) {
 	meta_type := mime.TypeByExtension(filepath.Ext(meta_location))
 	if meta_type != "application/xml" {
 		meta.Blunders.NewFatal(1, "Meta file not in xml format. Trying to use: "+meta_location)
+		return
 	}
 
 	file, file_error := os.Open(meta_location)
 	if file_error != nil {
 		meta.Blunders.NewFatal(1, "Unable to open Meta File: "+file_error.Error())
+		return
 	}
 
 	byte_val, read_error := ioutil.ReadAll(file)
 	if read_error != nil {
 		meta.Blunders.NewFatal(1, "Unable to read Meta File: "+read_error.Error())
+		return
 	}
 
 	unmarshal_error := xml.Unmarshal(byte_val, &meta)
 	if unmarshal_error != nil {
 		meta.Blunders.NewFatal(2, "Unable to Unmarshal meta data: "+unmarshal_error.Error())
+		return
 	}
 
 	meta.PointPositions = make(map[string]int)
@@ -120,21 +123,4 @@ func (m *Meta) LoadDataLocationInfo() {
 		}
 		m.DataAge = file_stats.ModTime()
 	}
-}
-
-func (m Meta) DisplayMeta() {
-	fmt.Println("Location:", m.DataLocation)
-	fmt.Println("IsFolder:", m.LocationIsFolder)
-	fmt.Println("MimeType:", m.DataType)
-	fmt.Println("HasTitleRow:", m.HasTitleRow)
-	fmt.Println("DataAge:", m.DataAge)
-
-	for _, dp := range m.DataPoints {
-		fmt.Println("	", dp)
-	}
-
-	for point, position := range m.PointPositions {
-		fmt.Println("	", point, " => ", position)
-	}
-
 }
