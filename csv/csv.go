@@ -50,7 +50,7 @@ func NewCsv() (new_file Csv) {
 // Calls NewCsv() and also automatically opens the file  with OpenFile().
 func Open(file_location string) (new_csv Csv) {
 	new_csv = NewCsv()
-	new_csv.OpenFile("./data.csv")
+	new_csv.OpenFile(file_location)
 	return
 }
 
