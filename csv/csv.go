@@ -117,9 +117,11 @@ func (c *Csv) NextRecord() (line []string) {
 // EOF was encountered during a NextRecord() call.
 func (c *Csv) HasMoreRecords() bool {
 	if c.AllDataRead {
+		c.Close()
 		return false
 	}
 	if c.Blunders.HasFatal() {
+		c.Close()
 		return false
 	}
 	return true

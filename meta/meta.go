@@ -3,11 +3,11 @@ package meta
 import (
 	"os"
 	"time"
-	"mime"
 	"io/ioutil"
 	"encoding/xml"
-	"path/filepath"
 	"blunders"
+	// "path/filepath"
+	// "mime"
 )
 
 type Meta struct {
@@ -33,11 +33,11 @@ func NewMeta(meta_location string) (meta Meta) {
 	meta.Blunders.AddCode(3, "DataPoint")
 	
 	
-	meta_type := mime.TypeByExtension(filepath.Ext(meta_location))
-	if meta_type != "application/xml" {
-		meta.Blunders.NewFatal(1, "Meta file not in xml format. Trying to use: "+meta_location)
-		return
-	}
+	// meta_type := mime.TypeByExtension(filepath.Ext(meta_location))
+	// if meta_type != "application/xml" && meta_type != "text/xml" {
+	// 	meta.Blunders.NewFatal(1, "Meta file not in xml format. Trying to use: "+meta_type+" from "+meta_location)
+	// 	return
+	// }
 
 	file, file_error := os.Open(meta_location)
 	if file_error != nil {
@@ -62,6 +62,13 @@ func NewMeta(meta_location string) (meta Meta) {
 		meta.PointPositions[dp.Name] = dp.Position
 	}
 
+	file.Close()
+
+	return
+}
+
+func (m *Meta) P(point_name string) (point_position int) {
+	point_position = m.PointPositions[point_name]
 	return
 }
 
@@ -97,13 +104,12 @@ func (m *Meta) GenerateMetaFile(data_points []string, output_location string) {
 
 }
 
-func (m Meta) HasDataPoints(required_points []string) (has_all bool) {
-	has_all = true
-	for _, rp := range required_points {
-		if _, rp_exists := m.PointPositions[rp]; !rp_exists {
-			m.Blunders.NewFatal(3, "Meta file missing data point \""+rp+"\"")
-			has_all = false
-		}
+func (m *Meta) Require(point string) (has_point bool) {
+	if _, point_exists := m.PointPositions[point]; !point_exists {
+		m.Blunders.NewFatal(3, "Meta file missing data point \""+point+"\"")
+		has_point = false
+	} else {
+		has_point = true
 	}
 	return
 }
