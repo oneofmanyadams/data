@@ -115,11 +115,13 @@ func (m *Meta) LoadDataLocationInfo() {
 		file, file_error := os.Open(m.DataLocation)
 		if file_error != nil {
 			m.Blunders.NewFatal(1, "Unable to open Data File: "+file_error.Error())
+			return
 		}
 	
 		file_stats, file_stat_error := file.Stat()
 		if file_stat_error != nil {
 			m.Blunders.NewFatal(1, "Unable to stat Data File: "+file_stat_error.Error())
+			return
 		}
 		m.DataAge = file_stats.ModTime()
 	}
