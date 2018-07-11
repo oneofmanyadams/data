@@ -18,7 +18,7 @@ type Meta struct {
 	DataAge time.Time `xml:"-"`
 	DataPoints []DataPoint `xml:"DataPoint"`
 	PointPositions map[string]int `xml:"-"`
-	Blunders blunders.Blunders `xml:"-"`
+	Blunders *blunders.BlunderBus `xml:"-"`
 }
 
 type DataPoint struct {
@@ -27,11 +27,7 @@ type DataPoint struct {
 }
 
 func NewMeta(meta_location string) (meta Meta) {
-	meta.Blunders = blunders.NewBlunders("META")
-	meta.Blunders.AddCode(1, "File")
-	meta.Blunders.AddCode(2, "Marshalling")
-	meta.Blunders.AddCode(3, "DataPoint")
-	
+	meta.Blunders = blunders.NewBlunderBus()
 	
 	// meta_type := mime.TypeByExtension(filepath.Ext(meta_location))
 	// if meta_type != "application/xml" && meta_type != "text/xml" {
@@ -41,19 +37,19 @@ func NewMeta(meta_location string) (meta Meta) {
 
 	file, file_error := os.Open(meta_location)
 	if file_error != nil {
-		meta.Blunders.NewFatal(1, "Unable to open Meta File: "+file_error.Error())
+		meta.Blunders.NewFatal("FILE", "Unable to open Meta File: "+file_error.Error())
 		return
 	}
 
 	byte_val, read_error := ioutil.ReadAll(file)
 	if read_error != nil {
-		meta.Blunders.NewFatal(1, "Unable to read Meta File: "+read_error.Error())
+		meta.Blunders.NewFatal("FILE", "Unable to read Meta File: "+read_error.Error())
 		return
 	}
 
 	unmarshal_error := xml.Unmarshal(byte_val, &meta)
 	if unmarshal_error != nil {
-		meta.Blunders.NewFatal(2, "Unable to Unmarshal meta data: "+unmarshal_error.Error())
+		meta.Blunders.NewFatal("MARSHALLING", "Unable to Unmarshal meta data: "+unmarshal_error.Error())
 		return
 	}
 
@@ -88,12 +84,12 @@ func (m *Meta) GenerateMetaFile(data_points []string, output_location string) {
 
 	file, file_error := os.Create(output_location)
 	if file_error != nil {
-		m.Blunders.New(1, "Unable to open file for sample meta data: \""+file_error.Error()+"\"")
+		m.Blunders.New("FILE", "Unable to open file for sample meta data: \""+file_error.Error()+"\"")
 	}
 
 	marshaled_data, marshal_error := xml.MarshalIndent(m, "", "	")
 	if marshal_error != nil {
-		m.Blunders.New(2, "Unable to marshal meta data: \""+marshal_error.Error()+"\"")
+		m.Blunders.New("MARSHALLING", "Unable to marshal meta data: \""+marshal_error.Error()+"\"")
 	}
 
 	file.Write(marshaled_data)
@@ -106,7 +102,7 @@ func (m *Meta) GenerateMetaFile(data_points []string, output_location string) {
 
 func (m *Meta) Require(point string) (has_point bool) {
 	if _, point_exists := m.PointPositions[point]; !point_exists {
-		m.Blunders.NewFatal(3, "Meta file missing data point \""+point+"\"")
+		m.Blunders.NewFatal("DATAPOINT", "Meta file missing data point \""+point+"\"")
 		has_point = false
 	} else {
 		has_point = true
@@ -120,13 +116,13 @@ func (m *Meta) LoadDataLocationInfo() {
 	} else {
 		file, file_error := os.Open(m.DataLocation)
 		if file_error != nil {
-			m.Blunders.NewFatal(1, "Unable to open Data File: "+file_error.Error())
+			m.Blunders.NewFatal("FILE", "Unable to open Data File: "+file_error.Error())
 			return
 		}
 	
 		file_stats, file_stat_error := file.Stat()
 		if file_stat_error != nil {
-			m.Blunders.NewFatal(1, "Unable to stat Data File: "+file_stat_error.Error())
+			m.Blunders.NewFatal("FILE", "Unable to stat Data File: "+file_stat_error.Error())
 			return
 		}
 		m.DataAge = file_stats.ModTime()

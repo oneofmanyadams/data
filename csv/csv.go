@@ -29,7 +29,7 @@ type Csv struct {
 	AllDataRead bool
 	Data *csv.Reader
 	file *os.File
-	Blunders blunders.Blunders
+	Blunders *blunders.BlunderBus
 }
 
 //////////////////////////////////////////////////////////////////
@@ -40,9 +40,7 @@ type Csv struct {
 // Initializes the Blunders instance.
 // This is where all Blunder Codes are defined.
 func NewCsv() (new_file Csv) {
-	new_file.Blunders = blunders.NewBlunders("CSV")
-	new_file.Blunders.AddCode(1, "DataLocation")
-	new_file.Blunders.AddCode(2, "LineProblem")
+	new_file.Blunders = blunders.NewBlunderBus()
 	return
 }
 
@@ -64,7 +62,7 @@ func Open(file_location string) (new_csv Csv) {
 func (c *Csv) OpenFile(file_location string) (load_success bool) {
 	file, file_error := os.Open(file_location)
 	if file_error != nil {
-		c.Blunders.NewFatal(1, file_error.Error())
+		c.Blunders.NewFatal("DATA", file_error.Error())
 		load_success = false
 		return
 	}
@@ -101,7 +99,7 @@ func (c *Csv) NextRecord() (line []string) {
 		if line_error == io.EOF {
 			c.AllDataRead = true
 		} else {
-			c.Blunders.NewFatal(2, line_error.Error())
+			c.Blunders.NewFatal("LINEREAD", line_error.Error())
 		}
 		return
 	}
@@ -120,7 +118,7 @@ func (c *Csv) HasMoreRecords() bool {
 		c.Close()
 		return false
 	}
-	if c.Blunders.HasFatal() {
+	if c.Blunders.HasFatal {
 		c.Close()
 		return false
 	}
