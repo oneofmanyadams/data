@@ -6,8 +6,6 @@ import (
 	"io/ioutil"
 	"encoding/xml"
 	"blunders"
-	// "path/filepath"
-	// "mime"
 )
 
 type Meta struct {
@@ -29,12 +27,6 @@ type DataPoint struct {
 func NewMeta(meta_location string) (meta Meta) {
 	meta.Blunders = blunders.NewBlunderBus()
 	
-	// meta_type := mime.TypeByExtension(filepath.Ext(meta_location))
-	// if meta_type != "application/xml" && meta_type != "text/xml" {
-	// 	meta.Blunders.NewFatal(1, "Meta file not in xml format. Trying to use: "+meta_type+" from "+meta_location)
-	// 	return
-	// }
-
 	file, file_error := os.Open(meta_location)
 	if file_error != nil {
 		meta.Blunders.NewFatal("FILE", "Unable to open Meta File: "+file_error.Error())
