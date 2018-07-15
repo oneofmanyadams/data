@@ -1,17 +1,17 @@
-package source
+package data
 
 import (
 	"data/csv"
 	"blunders"
 )
 
-type Source interface {
+type Data interface {
 	LoadLine([]string, int) bool
 	DataLocation() string
 	BlunderBus() *blunders.BlunderBus
 }
 
-func LoadCsvDataInto(data_source Source) {  // Gotta pass as "&Source" when calling this.
+func Loader(data_source Data) {  // Gotta pass as "&Source" when calling this.
 	csv_data := csv.Open(data_source.DataLocation())
 	data_source.BlunderBus().IncludeBlundersFrom(csv_data.Blunders)
 	csv_data.Blunders = data_source.BlunderBus()
