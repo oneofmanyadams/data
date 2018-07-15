@@ -60,7 +60,7 @@ func (m *Meta) P(point_name string) (point_position int) {
 	return
 }
 
-func (m *Meta) GenerateMetaFile(data_points []string, output_location string) {
+func (m *Meta) GenerateMetaFile(output_location string, data_points []string) {
 
 	old_data_points := m.DataPoints
 	if len(data_points) > 0 {
