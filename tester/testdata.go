@@ -3,14 +3,12 @@ package main
 import (
 	"blunders"
 	"data/meta"
-	"reflect"
 	"strconv"
 )
 
 type TestData struct {
 	Lines []TdLine
 	MetaLocation string
-	RequiredFields []string
 	Blunders *blunders.BlunderBus
 	MetaData meta.Meta
 }
@@ -25,33 +23,20 @@ func NewTestData(meta_location string) (td TestData) {
 	// implement blunders
 	td.Blunders = blunders.NewBlunderBus()
 
-	// Load required fields
-	td.DetermineRequiredFields()
-
 	//Load Meta
 	td.MetaLocation = meta_location	
 	td.MetaData = meta.NewMeta(td.MetaLocation)
-	td.MetaData.HasFields(td.RequiredFields)
+	var sample_line TdLine
+	td.MetaData.DetermineRequiredFields(sample_line)
 	td.Blunders.IncludeBlundersFrom(td.MetaData.Blunders)
 	td.MetaData.Blunders = td.Blunders
 
 	return
 }
 
-// Utility functions
-// Maybe move this to the Meta package? Pass the field as an argument
-func (td *TestData) DetermineRequiredFields() (req_fields []string) {
-	var sample_line TdLine
-	tp := reflect.TypeOf(sample_line)
-	for i := 0; i < tp.NumField(); i++ {
-		req_fields = append(req_fields, tp.Field(i).Name)
-	}
-	td.RequiredFields = req_fields
-	return
-}
-
 func (td *TestData) CreateDefaultMetaFile() {
-	td.MetaData.GenerateMetaFile(td.MetaLocation, td.RequiredFields)
+	var sample_line TdLine
+	td.MetaData.GenerateMetaFile(td.MetaLocation, sample_line)
 }
 
 // Source required Methods

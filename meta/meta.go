@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"encoding/xml"
 	"blunders"
+	"reflect"
 )
 
 type Meta struct {
@@ -63,18 +64,12 @@ func (m *Meta) P(point_name string) (point_position int) {
 	return
 }
 
-func (m *Meta) GenerateMetaFile(output_location string, data_points []string) {
-
-	old_data_points := m.DataPoints
-	if len(data_points) > 0 {
-		m.DataPoints = nil
-
-		for po, dp := range data_points {
-			var new_dp DataPoint
-			new_dp.Name = dp
-			new_dp.Position = po
-			m.DataPoints = append(m.DataPoints, new_dp)
-		}
+func (m *Meta) GenerateMetaFile(output_location string, sample_type interface{}) {
+	for po, dp := range m.DetermineRequiredFields(sample_type) {
+		var new_dp DataPoint
+		new_dp.Name = dp
+		new_dp.Position = po
+		m.DataPoints = append(m.DataPoints, new_dp)
 	}
 
 	file, file_error := os.Create(output_location)
@@ -88,11 +83,17 @@ func (m *Meta) GenerateMetaFile(output_location string, data_points []string) {
 	}
 
 	file.Write(marshaled_data)
-
-	m.DataPoints = old_data_points
-
 	file.Close()
 
+}
+
+func (m *Meta) DetermineRequiredFields(field_haver interface{}) (req_fields []string) {
+	tp := reflect.TypeOf(field_haver)
+	for i := 0; i < tp.NumField(); i++ {
+		req_fields = append(req_fields, tp.Field(i).Name)
+	}
+	m.HasFields(req_fields)
+	return
 }
 
 func (m *Meta) HasFields(point_list []string) bool {
