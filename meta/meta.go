@@ -13,6 +13,7 @@ type Meta struct {
 	LocationIsFolder bool
 	DataType string
 	HasTitleRow bool
+	HasRequiredFields bool `xml:"-"`
 	DataAge time.Time `xml:"-"`
 	DataPoints []DataPoint `xml:"DataPoint"`
 	PointPositions map[string]int `xml:"-"`
@@ -27,6 +28,8 @@ type DataPoint struct {
 func NewMeta(meta_location string) (meta Meta) {
 	meta.Blunders = blunders.NewBlunderBus()
 	
+	meta.HasRequiredFields = true
+
 	file, file_error := os.Open(meta_location)
 	if file_error != nil {
 		meta.Blunders.NewFatal("FILE", "Unable to open Meta File: "+file_error.Error())
@@ -90,6 +93,16 @@ func (m *Meta) GenerateMetaFile(output_location string, data_points []string) {
 
 	file.Close()
 
+}
+
+func (m *Meta) HasFields(point_list []string) bool {
+	for _, point_name := range point_list {
+		if !m.Require(point_name) {
+			m.HasRequiredFields = false
+			return false
+		}
+	}
+	return true
 }
 
 func (m *Meta) Require(point string) (has_point bool) {

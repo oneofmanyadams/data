@@ -118,7 +118,7 @@ func (c *Csv) HasMoreRecords() bool {
 		c.Close()
 		return false
 	}
-	if c.Blunders.HasFatal {
+	if c.Blunders.HasFatal && c.Blunders.ExitOnFatal {
 		c.Close()
 		return false
 	}
