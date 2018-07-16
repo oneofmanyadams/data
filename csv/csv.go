@@ -60,6 +60,8 @@ func Open(file_location string) (new_csv Csv) {
 // Will save a pointer to the file at .file and a pointer to the csv.Reader at .Data.
 // Returns true if the file was loaded and false if it was not loaded.
 func (c *Csv) OpenFile(file_location string) (load_success bool) {
+	c.Location = file_location
+	
 	file, file_error := os.Open(file_location)
 	if file_error != nil {
 		c.Blunders.NewFatal("DATA", file_error.Error())
@@ -68,7 +70,6 @@ func (c *Csv) OpenFile(file_location string) (load_success bool) {
 	}
 
 	c.file = file
-	c.Location = file_location
 
 	c.Data = csv.NewReader(bufio.NewReader(c.file))
 
@@ -93,6 +94,17 @@ func (c *Csv) Close() {
 // .AllDataRead to true.
 // Increments .LinesRead by 1.
 func (c *Csv) NextRecord() (line []string) {
+	if c.file == nil {
+		c.Blunders.NewFatal("LINEREAD", "No File open for "+c.Location)
+		c.AllDataRead = true
+		return
+	}
+	if c.Data == nil {
+		c.Blunders.NewFatal("LINEREAD", "No Data read for "+c.Location)
+		c.AllDataRead = true
+		return
+	}	
+
 	read_line, line_error := c.Data.Read()
 
 	if line_error != nil {
@@ -100,6 +112,7 @@ func (c *Csv) NextRecord() (line []string) {
 			c.AllDataRead = true
 		} else {
 			c.Blunders.NewFatal("LINEREAD", line_error.Error())
+			c.AllDataRead = true
 		}
 		return
 	}

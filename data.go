@@ -3,6 +3,7 @@ package data
 import (
 	"data/csv"
 	"blunders"
+//	"fmt"
 )
 
 type Data interface {
@@ -22,4 +23,5 @@ func Loader(data_source Data) {  // Gotta pass as "&Source" when calling this.
 			data_source.LoadLine(raw_line, line_count)
 		}
 	}
+	
 }
