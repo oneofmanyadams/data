@@ -137,3 +137,23 @@ func (c *Csv) HasMoreRecords() bool {
 	}
 	return true
 }
+
+//////////////////////////////////////////////////////////////////
+// Write Methods
+//////////////////////////////////////////////////////////////////
+
+func (c *Csv) WriteToFile(file_location string, data [][]string) {
+	// Create file
+	file, file_error := os.Create(file_location)
+	if file_error != nil {
+		c.Blunders.NewFatal("FILEWRITE", "Unable to write csv file. "+file_error.Error())
+	}
+	defer file.Close()
+	
+	// Write lines
+	writer := csv.NewWriter(file)
+	for _, wrrt_line := range data {
+		writer.Write(wrrt_line)
+	}
+	defer writer.Flush()
+}
