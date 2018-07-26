@@ -18,12 +18,14 @@ type Meta struct {
 	DataAge time.Time `xml:"-"`
 	DataPoints []DataPoint `xml:"DataPoint"`
 	PointPositions map[string]int `xml:"-"`
+	PointSpecials map[string]string `xml:"-"`
 	Blunders *blunders.BlunderBus `xml:"-"`
 }
 
 type DataPoint struct {
 	Name string
 	Position int
+	Special string
 }
 
 func NewMeta(meta_location string) (meta Meta) {
@@ -50,8 +52,11 @@ func NewMeta(meta_location string) (meta Meta) {
 	}
 
 	meta.PointPositions = make(map[string]int)
+	meta.PointSpecials = make(map[string]string)
+	
 	for _, dp := range meta.DataPoints {
 		meta.PointPositions[dp.Name] = dp.Position
+		meta.PointSpecials[dp.Name] = dp.Special
 	}
 
 	file.Close()
@@ -61,6 +66,11 @@ func NewMeta(meta_location string) (meta Meta) {
 
 func (m *Meta) P(point_name string) (point_position int) {
 	point_position = m.PointPositions[point_name]
+	return
+}
+
+func (m *Meta) S(point_name string) (point_special string) {
+	point_special = m.PointSpecials[point_name]
 	return
 }
 
