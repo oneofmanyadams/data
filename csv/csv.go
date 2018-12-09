@@ -86,24 +86,27 @@ func (c *Csv) FatalError(err error) {
 ////		Use Methods
 //////////////////////////////////////////////////////
 
-func (c *Csv) GenerateScanner() (scanner Scanner) {
+func (c *Csv) Scanner() (scanner Scanner) {
 	var base_reader io.Reader
-	
+	var source_files []*os.File
+
 	if c.LocationIsFolder {
 		var reader_groups []io.Reader
 		for _, sub_file := range c.ReadableFiles {
 			fi, fi_error := os.Open(c.DataPath+"/"+sub_file)
-			defer fi.Close()
+			source_files = append(source_files, fi)
 			if fi_error != nil {
 				c.FatalError(fi_error)
 				return
 			}
 			reader_groups = append(reader_groups, bufio.NewReader(fi))
 		}
-		base_reader = io.MultiReader(reader_groups...)
+		if len(reader_groups) > 0 {
+			base_reader = io.MultiReader(reader_groups...)
+		}
 	} else {
 		fi, fi_error := os.Open(c.DataPath)
-		defer fi.Close()
+		source_files = append(source_files, fi)
 		if fi_error != nil {
 			c.FatalError(fi_error)
 			return
@@ -111,7 +114,9 @@ func (c *Csv) GenerateScanner() (scanner Scanner) {
 		base_reader = bufio.NewReader(fi)
 	}
 
-	csv.NewReader(base_reader)
-
+	scanner.SourceFiles = source_files
+	if base_reader != nil {
+		scanner.Reader = csv.NewReader(base_reader)
+	}
 	return
 }
