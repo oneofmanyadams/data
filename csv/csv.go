@@ -1,85 +1,98 @@
 package csv
 
 import (
-	"bufio"
-	"encoding/csv"
-	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
+	"time"
+
+	"simple/sclid"
 )
 
 type Csv struct {
-	DataLocation string
-	DataPath string
-	LocationIsFolder bool
-	ReadableFiles []string
+	DataLocation csvDataLocation
+}
 
-	file *os.File
-	reader_writer *bufio.ReadWriter
+type csvDataLocation struct {
+	OriginalPath string
+	AbsPath string
+	LastModified time.Time
+	IsDir bool
+	IsCsv bool
 
-	Errors []error
+	SubDataLocations []csvDataLocation
+	UsableFiles []string
 
-	InUsableState bool
+	//UseModCutOff bool
+	//ModCutOff time.Time
+
+	errs []error
 }
 
 func New(data_location string) (new_csv Csv) {
-	new_csv.DataLocation = data_location
-	new_csv.InUsableState = true
-	new_csv.UpdateStats()
+	new_csv.DataLocation = newDataLocation(data_location)
 	return
 }
 
-func (c *Csv) UpdateStats() {
-	// open file
-	f, open_error := os.Open(c.DataLocation)
-	defer f.Close()
-	if open_error != nil {
-		c.FatalError(open_error)
+func newDataLocation(data_location string) (dl csvDataLocation) {
+	dl.OriginalPath = data_location
+
+	// Get full path for location.
+	full_path, abs_error := filepath.Abs(data_location)
+	if abs_error != nil {
+		dl.errs = append(dl.errs, abs_error)
 		return
 	}
+	dl.AbsPath = full_path
 
-	// get basic stats
-	c.file = f
-	file_stats, file_stats_error := c.file.Stat()
-	if file_stats_error != nil {
-		c.FatalError(file_stats_error)
+	// Verify file/folder path is valid and grab some basic stats.
+	stat_data, stat_error := os.Stat(dl.AbsPath)
+	if 	stat_error != nil {
+		dl.errs = append(dl.errs, stat_error)
 		return
 	}
-	c.LocationIsFolder = file_stats.IsDir()
+	dl.IsDir = stat_data.IsDir()
+	dl.LastModified = stat_data.ModTime()
 
-	abs_path, abs_path_error := filepath.Abs(c.DataLocation)
-	if abs_path_error != nil {
-		c.FatalError(abs_path_error)
-		return
-	}
-	c.DataPath = abs_path
-
-	// Load sub-file names of all csv files
-	// Only done if LocationIsFolder
-	if c.LocationIsFolder {
-		all_sub_file_names, dir_name_error := c.file.Readdirnames(0)
-		if dir_name_error != nil {
-			c.Error(dir_name_error)
+	// If location is directory, get all sub files
+	if dl.IsDir {
+		sub_stat, dir_error := ioutil.ReadDir(dl.AbsPath)
+		if dir_error != nil {
+			dl.errs = append(dl.errs, dir_error)
+			return	
 		}
-		var sub_files []string
-		for _, name := range all_sub_file_names {
-			if filepath.Ext(name) == ".csv" {
-				sub_files = append(sub_files, name)
+		for _, ss := range sub_stat {
+			nsl := newDataLocation(dl.AbsPath + "/" + ss.Name())
+			if nsl.IsCsv || nsl.IsDir {
+				dl.SubDataLocations = append(dl.SubDataLocations, nsl)
+				dl.UsableFiles = append(dl.UsableFiles, nsl.UsableFiles...)
 			}
 		}
-		c.ReadableFiles = sub_files
 	}
+
+	// If file, determine if CSV
+	if !dl.IsDir {
+		if filepath.Ext(dl.AbsPath) == ".csv" {
+			dl.IsCsv = true
+			dl.UsableFiles = append(dl.UsableFiles, dl.AbsPath)
+		} else {
+			dl.IsCsv = false
+		}
+	}
+
+	return
+}
+
+
+func (c *Csv) UpdateStats() {
 }
 
 //////////////////////////////////////////////////////
 ////		Error Methods
 //////////////////////////////////////////////////////
 func (c *Csv) Error(err error) {
-	c.Errors = append(c.Errors, err)
 }
 func (c *Csv) FatalError(err error) {
-	c.InUsableState = false
-	c.Errors = append(c.Errors, err)
 }
 
 //////////////////////////////////////////////////////
@@ -87,36 +100,34 @@ func (c *Csv) FatalError(err error) {
 //////////////////////////////////////////////////////
 
 func (c *Csv) Scanner() (scanner Scanner) {
-	var base_reader io.Reader
-	var source_files []*os.File
-
-	if c.LocationIsFolder {
-		var reader_groups []io.Reader
-		for _, sub_file := range c.ReadableFiles {
-			fi, fi_error := os.Open(c.DataPath+"/"+sub_file)
-			source_files = append(source_files, fi)
-			if fi_error != nil {
-				c.FatalError(fi_error)
-				return
-			}
-			reader_groups = append(reader_groups, bufio.NewReader(fi))
-		}
-		if len(reader_groups) > 0 {
-			base_reader = io.MultiReader(reader_groups...)
-		}
-	} else {
-		fi, fi_error := os.Open(c.DataPath)
-		source_files = append(source_files, fi)
-		if fi_error != nil {
-			c.FatalError(fi_error)
-			return
-		}
-		base_reader = bufio.NewReader(fi)
-	}
-
-	scanner.SourceFiles = source_files
-	if base_reader != nil {
-		scanner.Reader = csv.NewReader(base_reader)
-	}
 	return
+}
+
+//////////////////////////////////////////////////////
+////		Info Methods
+//////////////////////////////////////////////////////
+
+func (c *Csv) Info() {
+	var display_string [][]string
+	display_string = append(display_string, []string{"Data Location Info", "", ""})
+	display_string = append(display_string, []string{"", "Original Path:", c.DataLocation.OriginalPath})
+	display_string = append(display_string, []string{"", "Abs Path:", c.DataLocation.AbsPath})
+	display_string = append(display_string, []string{"", "Last Modified:", c.DataLocation.LastModified.Format("2006-01-02 15:04:05")})
+	loc_is_csv := "False"
+	if c.DataLocation.IsCsv {
+		loc_is_csv = "True"
+	}
+	display_string = append(display_string, []string{"", "Is A CSV file:", loc_is_csv})
+	
+	loc_is_dir := "False"
+	if c.DataLocation.IsDir {
+		loc_is_dir = "True"
+	}
+	display_string = append(display_string, []string{"", "Is Directory:", loc_is_dir})
+	display_string = append(display_string, []string{"", "Usable Sub Files:", ""})
+	for _, uf := range c.DataLocation.UsableFiles {
+		display_string = append(display_string, []string{"", "", uf})
+	}
+
+	sclid.Display(display_string)
 }
