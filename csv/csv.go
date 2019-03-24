@@ -61,6 +61,7 @@ func (c *Csv) LoadNextRecord() {
 	read_record, read_error := c.reader.Read()
 	if read_error != nil {
 		if read_error.Error() == "EOF" {
+			c.ActiveRecord = nil
 			c.HasMoreRecords = false
 			c.fileReference.Close()
 		} else {
