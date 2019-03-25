@@ -14,6 +14,8 @@ type Csv struct {
 	ActiveRecord []string
 	Errors []error
 
+	SkipFirstLine bool
+
 	fileReference *os.File
 	reader *csv.Reader
 	writer *csv.Writer
@@ -30,8 +32,10 @@ func New(data_location string) (new_csv Csv) {
 
 // LoadNewData is a quick way of defining and loading CSV data in one function call.
 // Useful for keeping entire csv read logic inside of one for loop.
+// !!! This skips the first line by default. 
 func LoadNewData(data_location string) (new_csv Csv) {
 	new_csv = New(data_location)
+	new_csv.SkipFirstLine = true
 	new_csv.LoadData()
 	return
 }
@@ -51,6 +55,9 @@ func (c *Csv) LoadData() () {
 
 	// Load first record
 	c.LoadNextRecord()
+	if c.SkipFirstLine && c.HasMoreRecords {
+		c.LoadNextRecord()
+	}
 
 	return
 }
@@ -71,6 +78,13 @@ func (c *Csv) LoadNextRecord() {
 		c.HasMoreRecords = true
 	}
 	c.ActiveRecord = read_record	
+}
+
+// ForceClose allows a manual closing of the file if needed.
+func (c *Csv) ForceClose() {
+	c.ActiveRecord = nil
+	c.HasMoreRecords = false
+	c.fileReference.Close()
 }
 
 /////////////////////////////////////////////////////////
