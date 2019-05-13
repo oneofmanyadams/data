@@ -64,7 +64,7 @@ func (c *Collection) ParseHref() {
 	if (parse_error != nil) {
 		c.Errors = append(c.Errors, parse_error)
 	}
-
+	
 	// This is weird because we are using just the query part instead of the whole url string.
 	// This is because the particular reporting service we are using has a weird (and dumb) url structure.
 	// Default version of this should probably just PathUnescape c.Href directly.
@@ -137,7 +137,6 @@ func (c *Collection) FromJsonFile(file_location string) {
 
 	json.Unmarshal(json_bytes, &c)
 }
-
 
 func (c Collection) Display() {
 	fmt.Println("HREF Length")
