@@ -1,7 +1,6 @@
 package atomsvc
 
 import (
-	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"io/ioutil"
@@ -35,7 +34,7 @@ type Collection struct {
 	Errors []error
 }
 
-func ReadAtomSvc(file_location string) (a AtomSvc) {
+func FromFile(file_location string) (a AtomSvc) {
 	file_reference, file_open_error := os.Open(file_location)
 	if (file_open_error != nil) {
 		a.Errors = append(a.Errors, file_open_error)
@@ -55,6 +54,14 @@ func ReadAtomSvc(file_location string) (a AtomSvc) {
 		cols.Options = make(map[string][]string)
 	}
 
+	return
+}
+
+func (a AtomSvc) AllCollections() (processed_collections []Collection) {
+	for _, col := range a.Service.Workspace.Collections {
+		col.ParseHref()
+		processed_collections = append(processed_collections, col)
+	}
 	return
 }
 
@@ -98,44 +105,6 @@ func (c *Collection) ParseHref() {
 	}	
 
 	c.Options = split_ops
-}
-
-func (c *Collection) ToJsonFile(file_location string) {
-	//Marshal MoCollection
-	json_data, marshal_error := json.MarshalIndent(c, "", "	")
-	if marshal_error != nil {
-		c.Errors = append(c.Errors, marshal_error)
-		return
-	}
-
-	// Create/Open json file
-	file_reference, file_open_error := os.Create(file_location)
-	defer file_reference.Close()
-	if file_open_error != nil {
-		c.Errors = append(c.Errors, file_open_error)
-		return
-	}
-	
-	file_reference.Write(json_data)
-}
-
-func (c *Collection) FromJsonFile(file_location string) {
-	// Open JSON file
-	file_reference, file_open_error := os.Open(file_location)
-	defer file_reference.Close()
-	if file_open_error != nil {
-		c.Errors = append(c.Errors, file_open_error)
-		return
-	}
-
-	// Read JSON file data
-	json_bytes, data_read_error := ioutil.ReadAll(file_reference)
-	if data_read_error != nil {
-		c.Errors = append(c.Errors, data_read_error)
-		return
-	}
-
-	json.Unmarshal(json_bytes, &c)
 }
 
 func (c Collection) Display() {
