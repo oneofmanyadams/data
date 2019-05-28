@@ -18,7 +18,7 @@ type CommonQuery struct {
 
 func NewCommonQuery() (ncq CommonQuery) {
 	ncq.Options = make(map[string][]string)
-	ncq.QueryPathSeparator = "?"
+	ncq.QueryPathSeparator = "&"
 	return
 }
 

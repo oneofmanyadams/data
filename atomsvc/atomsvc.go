@@ -67,15 +67,15 @@ func (a AtomSvc) AllCollections() (processed_collections []Collection) {
 
 func (c *Collection) ParseHref() {
 
-	url_r, parse_error := url.Parse(c.Href)
-	if (parse_error != nil) {
-		c.Errors = append(c.Errors, parse_error)
-	}
+	// url_r, parse_error := url.Parse(c.Href)
+	// if (parse_error != nil) {
+	// 	c.Errors = append(c.Errors, parse_error)
+	// }
 	
 	// This is weird because we are using just the query part instead of the whole url string.
 	// This is because the particular reporting service we are using has a weird (and dumb) url structure.
 	// Default version of this should probably just PathUnescape c.Href directly.
-	result, unescape_error := url.PathUnescape(url_r.RawQuery)
+	result, unescape_error := url.PathUnescape(c.Href)
 	if (unescape_error != nil) {
 		c.Errors = append(c.Errors, unescape_error)
 	}
